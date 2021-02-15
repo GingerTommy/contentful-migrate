@@ -70,7 +70,8 @@ exports.handler = async (args) => {
     dryRun,
     environmentId,
     file,
-    spaceId
+    spaceId,
+    proxy
   } = args
 
   if (proxy) {
