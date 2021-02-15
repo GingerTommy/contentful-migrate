@@ -2,6 +2,7 @@
 // vim: set ft=javascript:
 
 const { initSpace } = require('../../lib/store')
+const proxyToHttpsAgent = require('../util/proxy')
 
 exports.command = 'init'
 
@@ -35,8 +36,19 @@ exports.builder = (yargs) => {
       default: process.env.CONTENTFUL_ENV_ID || 'master',
       defaultDescription: 'environment var CONTENTFUL_ENV_ID if exists, otherwise master'
     })
+    .option('proxy', {
+      alias: 'p',
+      describe: 'proxy configuration in HTTP auth format: host:port or user:password@host:port',
+      type: 'string',
+      default: process.env.HTTPS_PROXY || process.env.HTTP_PROXY,
+      defaultDescription: 'environment var HTTPS_PROXY or HTTP_PROXY'
+    })
 }
 
-exports.handler = async ({ accessToken, spaceId, environmentId }) => {
-  return initSpace(accessToken, spaceId, environmentId)
+exports.handler = async ({ accessToken, spaceId, environmentId, proxy }) => {
+  if (proxy) {
+    console.log('Using proxy', proxy)
+  }
+  const httpsAgent = proxyToHttpsAgent(proxy)
+  return initSpace(accessToken, spaceId, environmentId, httpsAgent)
 }

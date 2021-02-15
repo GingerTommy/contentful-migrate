@@ -6,6 +6,7 @@ const chalk = require('chalk')
 const dateFormat = require('dateformat')
 const log = require('migrate/lib/log')
 const load = require('../../lib/load')
+const proxyToHttpsAgent = require('../util/proxy')
 
 exports.command = 'list'
 
@@ -39,6 +40,13 @@ exports.builder = (yargs) => {
       default: process.env.CONTENTFUL_ENV_ID || 'master',
       defaultDescription: 'environment var CONTENTFUL_ENV_ID if exists, otherwise master'
     })
+    .option('proxy', {
+      alias: 'p',
+      describe: 'proxy configuration in HTTP auth format: host:port or user:password@host:port',
+      type: 'string',
+      default: process.env.HTTPS_PROXY || process.env.HTTP_PROXY,
+      defaultDescription: 'environment var HTTPS_PROXY or HTTP_PROXY'
+    })
     .option('content-type', {
       alias: 'c',
       describe: 'one or more content type names to list',
@@ -62,7 +70,7 @@ exports.builder = (yargs) => {
 }
 
 exports.handler = async ({
-  spaceId, environmentId, contentType, accessToken
+  spaceId, environmentId, contentType, accessToken, proxy
 }) => {
   const migrationsDirectory = path.join('.', 'migrations')
 
@@ -83,6 +91,11 @@ exports.handler = async ({
     })
   }
 
+  if (proxy) {
+    console.log(chalk.bold.blue('Using proxy'), chalk.green(proxy))
+  }
+  const httpsAgent = proxyToHttpsAgent(proxy)
+
   // Load in migrations
   const sets = await load({
     accessToken,
@@ -90,7 +103,8 @@ exports.handler = async ({
     dryRun: false,
     environmentId,
     migrationsDirectory,
-    spaceId
+    spaceId,
+    httpsAgent
   })
 
   sets.forEach(set => set
