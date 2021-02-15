@@ -5,7 +5,7 @@ const chalk = require('chalk')
 const readline = require('readline')
 const path = require('path')
 const bootstrap = require('../../lib/bootstrap')
-const proxyToHttpsAgent = require('../utils/proxy')
+const proxyToHttpsAgent = require('../util/proxy')
 
 exports.command = 'bootstrap'
 

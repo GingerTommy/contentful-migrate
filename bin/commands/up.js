@@ -9,7 +9,7 @@ const pMap = require('p-map')
 const runMigrations = require('migrate/lib/migrate')
 const log = require('migrate/lib/log')
 const load = require('../../lib/load')
-const proxyToHttpsAgent = require('../utils/proxy')
+const proxyToHttpsAgent = require('../util/proxy')
 
 exports.command = 'up [file]'
 
