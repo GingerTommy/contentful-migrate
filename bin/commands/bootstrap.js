@@ -6,6 +6,7 @@ const readline = require('readline')
 const path = require('path')
 
 const bootstrap = require('../../lib/bootstrap')
+const proxyToHttpsAgent = require('../util/proxy')
 
 exports.command = 'bootstrap'
 
@@ -39,6 +40,13 @@ exports.builder = (yargs) => {
       default: process.env.CONTENTFUL_ENV_ID || 'master',
       defaultDescription: 'environment var CONTENTFUL_ENV_ID if exists, otherwise master'
     })
+    .option('proxy', {
+      alias: 'p',
+      describe: 'proxy configuration in HTTP auth format: host:port or user:password@host:port',
+      type: 'string',
+      default: process.env.HTTPS_PROXY || process.env.HTTP_PROXY,
+      defaultDescription: 'environment var HTTPS_PROXY or HTTP_PROXY'
+    })
     .option('content-type', {
       alias: 'c',
       describe: 'one or more content type names to process',
@@ -68,9 +76,15 @@ exports.handler = async (args) => {
     environmentId,
     spaceId,
     contentType,
-    accessToken
+    accessToken,
+    proxy
   } = args
 
+  if (proxy) {
+    console.log(chalk.bold.blue('Using proxy'), proxy)
+  }
+  var httpsAgent = proxyToHttpsAgent(proxy)
+  
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
@@ -99,5 +113,5 @@ exports.handler = async (args) => {
     }
   }
   rl.close()
-  await bootstrap(spaceId, environmentId, contentType, accessToken, migrationsDirectory, writeMigrationState)
+  await bootstrap(spaceId, environmentId, contentType, accessToken, httpsAgent, migrationsDirectory, writeMigrationState)
 }

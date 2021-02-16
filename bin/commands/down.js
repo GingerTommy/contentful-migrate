@@ -5,6 +5,7 @@ const path = require('path')
 const runMigrations = require('migrate/lib/migrate')
 const log = require('migrate/lib/log')
 const load = require('../../lib/load')
+const proxyToHttpsAgent = require('../util/proxy')
 
 exports.command = 'down [file]'
 
@@ -38,6 +39,13 @@ exports.builder = (yargs) => {
       default: process.env.CONTENTFUL_ENV_ID || 'master',
       defaultDescription: 'environment var CONTENTFUL_ENV_ID if exists, otherwise master'
     })
+    .option('proxy', {
+      alias: 'p',
+      describe: 'proxy configuration in HTTP auth format: host:port or user:password@host:port',
+      type: 'string',
+      default: process.env.HTTPS_PROXY || process.env.HTTP_PROXY,
+      defaultDescription: 'environment var HTTPS_PROXY or HTTP_PROXY'
+    })
     .option('content-type', {
       alias: 'c',
       describe: 'single content type name to process',
@@ -62,8 +70,14 @@ exports.handler = async (args) => {
     dryRun,
     environmentId,
     file,
-    spaceId
+    spaceId,
+    proxy
   } = args
+
+  if (proxy) {
+    console.log('Using proxy', proxy)
+  }
+  var httpsAgent = proxyToHttpsAgent(proxy)
 
   const migrationsDirectory = path.join('.', 'migrations')
 
@@ -83,7 +97,7 @@ exports.handler = async (args) => {
 
   // Load in migrations
   const sets = await load({
-    migrationsDirectory, spaceId, environmentId, accessToken, dryRun, contentTypes: [contentType]
+    migrationsDirectory, spaceId, environmentId, accessToken, httpsAgent, dryRun, contentTypes: [contentType]
   })
 
   sets.forEach(set => set

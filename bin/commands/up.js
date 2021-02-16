@@ -9,6 +9,7 @@ const pMap = require('p-map')
 const runMigrations = require('migrate/lib/migrate')
 const log = require('migrate/lib/log')
 const load = require('../../lib/load')
+const proxyToHttpsAgent = require('../util/proxy')
 
 exports.command = 'up [file]'
 
@@ -41,6 +42,13 @@ exports.builder = (yargs) => {
       requiresArg: true,
       default: process.env.CONTENTFUL_ENV_ID || 'master',
       defaultDescription: 'environment var CONTENTFUL_ENV_ID if exists, otherwise master'
+    })
+    .option('proxy', {
+      alias: 'p',
+      describe: 'proxy configuration in HTTP auth format: host:port or user:password@host:port',
+      type: 'string',
+      default: process.env.HTTPS_PROXY || process.env.HTTP_PROXY,
+      defaultDescription: 'environment var HTTPS_PROXY or HTTP_PROXY'
     })
     .option('content-type', {
       alias: 'c',
@@ -86,8 +94,14 @@ exports.handler = async (args) => {
     dryRun,
     environmentId,
     file,
-    spaceId
+    spaceId,
+    proxy
   } = args
+
+  if (proxy) {
+    console.log(chalk.bold.blue('Using proxy'), proxy)
+  }
+  var httpsAgent = proxyToHttpsAgent(proxy)
 
   const migrationsDirectory = path.join('.', 'migrations')
 
@@ -104,7 +118,8 @@ exports.handler = async (args) => {
     dryRun,
     environmentId,
     migrationsDirectory,
-    spaceId
+    spaceId,
+    httpsAgent
   })
 
   // TODO concurrency can be an cmdline option? I set it to 1 for now to make logs more readable
